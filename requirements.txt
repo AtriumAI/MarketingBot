@@ -1,0 +1,8 @@
+snowflake-snowpark-python[pandas]>=1.7.0
+streamlit==1.28.1
+#openai==1.2.2
+google-cloud-aiplatform>=1.38
+vertexai>=0.0.1
+#pytest
+#from google.cloud import aiplatform
+#from vertexai.generative_models import GenerativeModel, ChatSession

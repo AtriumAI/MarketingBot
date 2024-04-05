@@ -3,7 +3,7 @@ import vertexai
 from vertexai.generative_models import GenerativeModel, ChatSession
 import re
 import streamlit as st
-from doubleprompt import get_system_prompt
+from prompts import get_system_prompt
 
 st.title("☃️ Marketing Marisa")
 
@@ -51,14 +51,21 @@ if st.session_state.messages[-1]["role"] != "assistant":
             conn = st.connection("snowflake")
             message["results"] = conn.query(sql)
             st.dataframe(message["results"])
-            if len(message["results"]) > 1:
-                y_val = list(message["results"].columns)[1]
+            if len(message["results"].columns) == 1:
+                if pd.api.types.is_numeric_dtype(message["results"].iloc[:, 0]):
+                    st.bar_chart(
+                        message["results"],
+                        x=list(message["results"].columns)[0],
+                        y=list(message["results"].columns)[0],
+                    )
+                else:
+                    st.write(
+                        "Cannot create a bar chart with a single non-numeric column."
+                    )
             else:
-                y_val = list(message["results"].columns)[0]
-
-            st.bar_chart(
-                message["results"],
-                x=list(message["results"].columns)[0],
-                y=y_val,
-            )
+                st.bar_chart(
+                    message["results"],
+                    x=list(message["results"].columns)[0],
+                    y=list(message["results"].columns)[1],
+                )
         st.session_state.messages.append(message)
