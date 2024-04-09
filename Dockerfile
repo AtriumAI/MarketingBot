@@ -6,7 +6,7 @@
 
 # Want to help us make this template better? Share your feedback here: https://forms.gle/ybq9Krt8jtBL3iCk7
 
-ARG PYTHON_VERSION=3.8.6
+ARG PYTHON_VERSION=3.11
 FROM python:${PYTHON_VERSION}-slim as base
 
 # Prevents Python from writing pyc files.
@@ -48,4 +48,4 @@ COPY . .
 EXPOSE 8501
 
 # Run the application.
-CMD streamlit run src/marketing_bot.py
+CMD ["streamlit", "run", "src/table_app.py", "--server.port", "8501"]
