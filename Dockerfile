@@ -48,4 +48,4 @@ COPY . .
 EXPOSE 8501
 
 # Run the application.
-CMD ["streamlit", "run", "src/table_app.py", "--server.port", "8501"]
+CMD ["streamlit", "run", "src/toggle.py", "--server.port", "8501"]
