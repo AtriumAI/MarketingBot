@@ -1,4 +1,4 @@
-# Hey everyone, Marketing Marisa here!
+# Hey everyone, Your Marketing Assistant here!
 
 ## I'm your go-to Snowflake SQL whiz for digging into your marketing data.
 

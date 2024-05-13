@@ -11,7 +11,7 @@ import google.generativeai as genai
 # from google.generativeai import GenerativeModel, ChatSession
 # from prompts import get_system_prompt
 
-st.title('Marketing Marisa')
+st.title('Marketing Assistant')
 SCHEMA_PATH = st.secrets.get("SCHEMA_PATH", "GFORSYTHE.MARKETINGBOT")
 conn = st.connection("snowflake")
 metadata_query = f"SELECT distinct(VARIABLE) FROM {SCHEMA_PATH}.MARKETING_METRICS_FINAL;"
@@ -52,23 +52,23 @@ TABLE_DESCRIPTION = """
 This table has various metrics for website landing pages (also referred to as websites), campaigns (also referred to as initiatives), and accounts (also referred to as companies).
 The above mediums are defined in the MEDIUM column.
 """
-# This query is optional if running Marisa on your own table, especially a wide table.
-# Since this is a deep table, it's useful to tell Marisa what variables are available.
+# This query is optional if running Assistant on your own table, especially a wide table.
+# Since this is a deep table, it's useful to tell Assistant what variables are available.
 # Similarly, if you have a table with semi-structured data (like JSON), it could be used to provide hints on available keys.
 # If altering, you may also need to modify the formatting logic in get_table_context() below.
 METADATA_QUERY = f"SELECT VARIABLE, DEFINITION FROM {SCHEMA_PATH}.MARKETING_ATTRIBUTES;"
 MEDIUM_QUERY = f"SELECT MEDIUM, DESCRIPTION FROM {SCHEMA_PATH}.MARKETING_MEDIUMS;"
 GEN_SQL = """
-You will be acting as an AI Snowflake SQL Expert named Marketing Marisa.
+You will be acting as an AI Snowflake SQL Expert named Marketing Assistant.
 Your goal is to give correct, executable sql query to users.
-You will be replying to users who will be confused if you don't respond in the character of Marketing Marisa.
+You will be replying to users who will be confused if you don't respond in the character of Marketing Assistant.
 You are given one table, the table name is in <tableName> tag, the columns are in <columns> tag.
 The user will ask questions, for each question you should respond and include a sql query based on the question and the table.
 The table is set up so you should only need to filter and aggregate based on the users input. 
 
 {context}
 
-Here are 6 critical rules for the interaction you must abide:
+Here are 12 critical rules for the interaction you must abide:
 <rules>
 1. You MUST MUST wrap the generated sql code within ``` sql code markdown in this format e.g
 ```sql
@@ -80,9 +80,11 @@ Here are 6 critical rules for the interaction you must abide:
 5. You should only use the table columns given in <columns>, and the table given in <tableName>, you MUST NOT hallucinate about the table names
 6. DO NOT put numerical at the very front of sql variable.
 7. When the user includes total you need to sum the VALUE for ALL months and years except if the VARIABLE is CONVERSION RATE then use average.
-8. You must filter on MEDIUM and VARIABLE everytime based on the user input unless they ask for all values related to TITLE.
+8. You MUST filter on MEDIUM and VARIABLE EVERYTIME based on the user input UNLESS they ask for all values related to TITLE.
 9. Only use case statements when users want to compare two variables.
 10. Never group by ACCOUNT, WEB PAGE, or CAMPAIGN instead use TITLE
+11. ONLY aggregate on the VALUE column
+12. Do not use DISTINCT 
 </rules>
 
 Don't forget to use "ilike %keyword%" for fuzzy match queries (especially for variable_name column)
@@ -95,6 +97,8 @@ select
     YEAR
 from GFORSYTHE.MARKETINGBOT.MARKETING_METRICS_FINAL
 group by MONTH, YEAR
+WHERE MEDIUM = 'insert medium'
+AND VARIABLE = 'insert variable'
 ```
 
 For each question from the user, make sure to include a query in your response.
@@ -103,7 +107,7 @@ Now to get started say Hello, but do not provide any examples.
 """
 
 
-@st.cache_data(show_spinner="Loading Marisa's context...")
+@st.cache_data(show_spinner="Loading Assistant's context...")
 def get_table_context(
     table_name: str, table_description: str, medium_query: str = None, metadata_query: str = None
 ):
@@ -181,12 +185,10 @@ if prompt := st.chat_input():
 for message in st.session_state.messages:
     if message["role"] == "system":
         continue
-    if on:
-        if message['role'] == 'assistant':
-            with st.chat_message(message["role"],avatar='src/bot-static.png'):
-                st.write(message["content"])
     if message['role'] == 'assistant':
             with st.chat_message(message["role"],avatar='src/bot-static.png'):
+                if on:
+                    st.write(message["content"])
                 if "results" in message:
                     st.dataframe(message["results"])
                     if len(message["results"].columns) == 1:
@@ -240,6 +242,56 @@ for message in st.session_state.messages:
                             st.write(
                                 "Cannot create a bar chart with a single non-numeric column."
                             )
+                    elif not pd.api.types.is_numeric_dtype(message["results"].iloc[:, 1]): 
+                        df = pd.DataFrame(message["results"])
+                        df['MONTH-YEAR'] = df['MONTH'].astype(str) + '-' + df['YEAR'].astype(str)
+                        
+                        fig = go.Figure(data=[go.Bar(x=df['MONTH-YEAR'], y=df['VALUE'])])
+
+                        # Add sorting buttons
+                        fig.update_layout(
+                            updatemenus=[
+                                dict(
+                                    buttons=list(
+                                        [
+                                            dict(
+                                                label="Ascending",
+                                                method="update",
+                                                args=[
+                                                    {
+                                                        "x": [df.sort_values('VALUE')['MONTH-YEAR']],
+                                                        "y": [df.sort_values('VALUE')['VALUE']],
+                                                    }
+                                                ],
+                                            ),
+                                            dict(
+                                                label="Descending",
+                                                method="update",
+                                                args=[
+                                                    {
+                                                        "x": [
+                                                            df.sort_values("VALUE", ascending=False)[
+                                                                "MONTH-YEAR"
+                                                            ]
+                                                        ],
+                                                        "y": [
+                                                            df.sort_values("VALUE", ascending=False)[
+                                                                "VALUE"
+                                                            ]
+                                                        ],
+                                                    }
+                                                ],
+                                            ),
+                                        ]
+                                    ),
+                                    direction="down",
+                                ),
+                            ]
+                        )
+
+                        st.plotly_chart(fig, use_container_width=True)
+                        if len(df['VARIABLE'].unique()) > 1:
+                            st.write('We recommend running the same prompt for one variable for optimal plots')        
                     else:
                         df = pd.DataFrame(message["results"])
                         fig = go.Figure(data=[go.Bar(x=df.iloc[:, 0], y=df.iloc[:, 1])])
@@ -360,6 +412,56 @@ if st.session_state.messages[-1]["role"] != "assistant":
                     st.write(
                         "Cannot create a bar chart with a single non-numeric column."
                     )
+            elif not pd.api.types.is_numeric_dtype(message["results"].iloc[:, 1]): 
+                        df = pd.DataFrame(message["results"])
+                        df['MONTH-YEAR'] = df['MONTH'].astype(str) + '-' + df['YEAR'].astype(str)
+                        
+                        fig = go.Figure(data=[go.Bar(x=df['MONTH-YEAR'], y=df['VALUE'])])
+
+                        # Add sorting buttons
+                        fig.update_layout(
+                            updatemenus=[
+                                dict(
+                                    buttons=list(
+                                        [
+                                            dict(
+                                                label="Ascending",
+                                                method="update",
+                                                args=[
+                                                    {
+                                                        "x": [df.sort_values('VALUE')['MONTH-YEAR']],
+                                                        "y": [df.sort_values('VALUE')['VALUE']],
+                                                    }
+                                                ],
+                                            ),
+                                            dict(
+                                                label="Descending",
+                                                method="update",
+                                                args=[
+                                                    {
+                                                        "x": [
+                                                            df.sort_values("VALUE", ascending=False)[
+                                                                "MONTH-YEAR"
+                                                            ]
+                                                        ],
+                                                        "y": [
+                                                            df.sort_values("VALUE", ascending=False)[
+                                                                "VALUE"
+                                                            ]
+                                                        ],
+                                                    }
+                                                ],
+                                            ),
+                                        ]
+                                    ),
+                                    direction="down",
+                                ),
+                            ]
+                        )
+
+                        st.plotly_chart(fig, use_container_width=True)
+                        if len(df['VARIABLE'].unique()) > 1:
+                            st.write('We recommend running the same prompt for one variable for optimal plots')
             else:
                 df = pd.DataFrame(message["results"])
                 fig = go.Figure(data=[go.Bar(x=df.iloc[:, 0], y=df.iloc[:, 1])])
