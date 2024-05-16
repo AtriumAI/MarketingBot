@@ -3,6 +3,7 @@ import streamlit as st
 import vertexai
 import pandas as pd
 import plotly.graph_objects as go
+import os
 
 # from vertexai.generative_models import GenerativeModel, ChatSession
 # import google.auth
@@ -25,7 +26,7 @@ variables = metadata['VARIABLE'].tolist()
 mediums = medium['MEDIUM'].tolist()
 titles = title['TITLE'].tolist()
 
-with open("src\sidebar.md", "r") as sidebar_file:
+with open(os.path.join("src", "sidebar.md") , "r") as sidebar_file:
     sidebar_content = sidebar_file.read()
 
 with st.sidebar:
