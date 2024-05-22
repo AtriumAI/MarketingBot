@@ -3,6 +3,7 @@ import streamlit as st
 import vertexai
 import pandas as pd
 import plotly.graph_objects as go
+import os
 
 # from vertexai.generative_models import GenerativeModel, ChatSession
 # import google.auth
@@ -13,10 +14,11 @@ import google.generativeai as genai
 
 st.title('Marketing Assistant')
 SCHEMA_PATH = st.secrets.get("SCHEMA_PATH", "GFORSYTHE.MARKETINGBOT")
+MARKETING_METRICS_TABLE = st.secrets.get("MARKETING_METRICS_TABLE", "MARKETING_METRICS_FINAL")
 conn = st.connection("snowflake")
-metadata_query = f"SELECT distinct(VARIABLE) FROM {SCHEMA_PATH}.MARKETING_METRICS_FINAL;"
-medium_query = f"SELECT distinct(MEDIUM) FROM {SCHEMA_PATH}.MARKETING_METRICS_FINAL;"
-title_query = f"SELECT distinct(TITLE) FROM {SCHEMA_PATH}.MARKETING_METRICS_FINAL;"
+metadata_query = f"SELECT distinct(VARIABLE) FROM {SCHEMA_PATH}.{MARKETING_METRICS_TABLE};"
+medium_query = f"SELECT distinct(MEDIUM) FROM {SCHEMA_PATH}.{MARKETING_METRICS_TABLE};"
+title_query = f"SELECT distinct(TITLE) FROM {SCHEMA_PATH}.{MARKETING_METRICS_TABLE};"
 metadata = conn.query(metadata_query, show_spinner=False)
 medium = conn.query(medium_query, show_spinner=False)
 title = conn.query(title_query, show_spinner=False)
@@ -25,7 +27,7 @@ variables = metadata['VARIABLE'].tolist()
 mediums = medium['MEDIUM'].tolist()
 titles = title['TITLE'].tolist()
 
-with open("src\sidebar.md", "r") as sidebar_file:
+with open(os.path.join("src", "sidebar.md") , "r") as sidebar_file:
     sidebar_content = sidebar_file.read()
 
 with st.sidebar:
@@ -47,7 +49,7 @@ genai.configure(api_key=st.secrets.GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-1.0-pro")
 
 SCHEMA_PATH = st.secrets.get("SCHEMA_PATH", "GFORSYTHE.MARKETINGBOT")
-QUALIFIED_TABLE_NAME = f"{SCHEMA_PATH}.MARKETING_METRICS_FINAL"
+QUALIFIED_TABLE_NAME = f"{SCHEMA_PATH}.{MARKETING_METRICS_TABLE}"
 TABLE_DESCRIPTION = """
 This table has various metrics for website landing pages (also referred to as websites), campaigns (also referred to as initiatives), and accounts (also referred to as companies).
 The above mediums are defined in the MEDIUM column.
