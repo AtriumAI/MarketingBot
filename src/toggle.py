@@ -4,6 +4,7 @@ import vertexai
 import pandas as pd
 import plotly.graph_objects as go
 import os
+from plotly_helper import plotly_dispatch
 
 # from vertexai.generative_models import GenerativeModel, ChatSession
 # import google.auth
@@ -183,7 +184,6 @@ if "messages" not in st.session_state:
 if prompt := st.chat_input():
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-
 for message in st.session_state.messages:
     if message["role"] == "system":
         continue
@@ -193,159 +193,13 @@ for message in st.session_state.messages:
                     st.write(message["content"])
                 if "results" in message:
                     st.dataframe(message["results"])
-                    if len(message["results"].columns) == 1:
-                        if pd.api.types.is_numeric_dtype(message["results"].iloc[:, 0]):
-                            df = pd.DataFrame(message["results"])
-                            fig = go.Figure(data=[go.Bar(x=df.iloc[:, 0], y=df.iloc[:, 0])])
-
-                            # Add sorting buttons
-                            fig.update_layout(
-                                updatemenus=[
-                                    dict(
-                                        buttons=list(
-                                            [
-                                                dict(
-                                                    label="Ascending",
-                                                    method="update",
-                                                    args=[
-                                                        {
-                                                            "x": [df.sort_values(df.columns[0])[df.columns[0]]],
-                                                            "y": [df.sort_values(df.columns[0])[df.columns[0]]],
-                                                        }
-                                                    ],
-                                                ),
-                                                dict(
-                                                    label="Descending",
-                                                    method="update",
-                                                    args=[
-                                                        {
-                                                            "x": [
-                                                                df.sort_values(df.columns[0], ascending=False)[
-                                                                    df.columns[0]
-                                                                ]
-                                                            ],
-                                                            "y": [
-                                                                df.sort_values(df.columns[0], ascending=False)[
-                                                                    df.columns[0]
-                                                                ]
-                                                            ],
-                                                        }
-                                                    ],
-                                                ),
-                                            ]
-                                        ),
-                                        direction="down",
-                                    ),
-                                ]
-                            )
-
-                            st.plotly_chart(fig, use_container_width=True)
-                        else:
-                            st.write(
-                                "Cannot create a bar chart with a single non-numeric column."
-                            )
-                    elif not pd.api.types.is_numeric_dtype(message["results"].iloc[:, 1]): 
-                        df = pd.DataFrame(message["results"])
-                        df['MONTH-YEAR'] = df['MONTH'].astype(str) + '-' + df['YEAR'].astype(str)
-                        
-                        fig = go.Figure(data=[go.Bar(x=df['MONTH-YEAR'], y=df['VALUE'])])
-
-                        # Add sorting buttons
-                        fig.update_layout(
-                            updatemenus=[
-                                dict(
-                                    buttons=list(
-                                        [
-                                            dict(
-                                                label="Ascending",
-                                                method="update",
-                                                args=[
-                                                    {
-                                                        "x": [df.sort_values('VALUE')['MONTH-YEAR']],
-                                                        "y": [df.sort_values('VALUE')['VALUE']],
-                                                    }
-                                                ],
-                                            ),
-                                            dict(
-                                                label="Descending",
-                                                method="update",
-                                                args=[
-                                                    {
-                                                        "x": [
-                                                            df.sort_values("VALUE", ascending=False)[
-                                                                "MONTH-YEAR"
-                                                            ]
-                                                        ],
-                                                        "y": [
-                                                            df.sort_values("VALUE", ascending=False)[
-                                                                "VALUE"
-                                                            ]
-                                                        ],
-                                                    }
-                                                ],
-                                            ),
-                                        ]
-                                    ),
-                                    direction="down",
-                                ),
-                            ]
-                        )
-
-                        st.plotly_chart(fig, use_container_width=True)
-                        if len(df['VARIABLE'].unique()) > 1:
-                            st.write('We recommend running the same prompt for one variable for optimal plots')        
-                    else:
-                        df = pd.DataFrame(message["results"])
-                        fig = go.Figure(data=[go.Bar(x=df.iloc[:, 0], y=df.iloc[:, 1])])
-
-                        # Add sorting buttons
-                        fig.update_layout(
-                            updatemenus=[
-                                dict(
-                                    buttons=list(
-                                        [
-                                            dict(
-                                                label="Ascending",
-                                                method="update",
-                                                args=[
-                                                    {
-                                                        "x": [df.sort_values(df.columns[1])[df.columns[0]]],
-                                                        "y": [df.sort_values(df.columns[1])[df.columns[1]]],
-                                                    }
-                                                ],
-                                            ),
-                                            dict(
-                                                label="Descending",
-                                                method="update",
-                                                args=[
-                                                    {
-                                                        "x": [
-                                                            df.sort_values(df.columns[1], ascending=False)[
-                                                                df.columns[0]
-                                                            ]
-                                                        ],
-                                                        "y": [
-                                                            df.sort_values(df.columns[1], ascending=False)[
-                                                                df.columns[1]
-                                                            ]
-                                                        ],
-                                                    }
-                                                ],
-                                            ),
-                                        ]
-                                    ),
-                                    direction="down",
-                                ),
-                            ]
-                        )
-
-                        st.plotly_chart(fig, use_container_width=True)
+                    plotly_dispatch(message["results"], st)
     if message['role'] != 'assistant':
         with st.chat_message(message['role'], avatar='src/Atrium_FullColor_Vertical-Gray-Text.png'):
             st.write(message["content"])
 # If last message is not from assistant, we need to generate a new response
 if st.session_state.messages[-1]["role"] != "assistant":
-    with st.chat_message("assistant", avatar='src/bot-static.png'):    
+    with st.chat_message("assistant", avatar='src/bot-static.png'):
         response = ""
         resp_container = st.empty()
         for delta in chat.send_message(
@@ -364,146 +218,5 @@ if st.session_state.messages[-1]["role"] != "assistant":
             conn = st.connection("snowflake")
             message["results"] = conn.query(sql)
             st.dataframe(message["results"])
-            if len(message["results"].columns) == 1:
-                if pd.api.types.is_numeric_dtype(message["results"].iloc[:, 0]):
-                    fig = go.Figure(data=[go.Bar(x=df.iloc[:, 0], y=df.iloc[:, 0])])
-
-# Add sorting buttons
-                    fig.update_layout(
-                        updatemenus=[
-                            dict(
-                                buttons=list(
-                                    [
-                                        dict(
-                                            label="Ascending",
-                                            method="update",
-                                            args=[
-                                                {
-                                                    "x": [df.sort_values(df.columns[0])[df.columns[0]]],
-                                                    "y": [df.sort_values(df.columns[0])[df.columns[0]]],
-                                                }
-                                            ],
-                                        ),
-                                        dict(
-                                            label="Descending",
-                                            method="update",
-                                            args=[
-                                                {
-                                                    "x": [
-                                                        df.sort_values(df.columns[0], ascending=False)[
-                                                            df.columns[0]
-                                                        ]
-                                                    ],
-                                                    "y": [
-                                                        df.sort_values(df.columns[0], ascending=False)[
-                                                            df.columns[0]
-                                                        ]
-                                                    ],
-                                                }
-                                            ],
-                                        ),
-                                    ]
-                                ),
-                                direction="down",
-                            ),
-                        ]
-                    )
-
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.write(
-                        "Cannot create a bar chart with a single non-numeric column."
-                    )
-            elif not pd.api.types.is_numeric_dtype(message["results"].iloc[:, 1]): 
-                        df = pd.DataFrame(message["results"])
-                        df['MONTH-YEAR'] = df['MONTH'].astype(str) + '-' + df['YEAR'].astype(str)
-                        
-                        fig = go.Figure(data=[go.Bar(x=df['MONTH-YEAR'], y=df['VALUE'])])
-
-                        # Add sorting buttons
-                        fig.update_layout(
-                            updatemenus=[
-                                dict(
-                                    buttons=list(
-                                        [
-                                            dict(
-                                                label="Ascending",
-                                                method="update",
-                                                args=[
-                                                    {
-                                                        "x": [df.sort_values('VALUE')['MONTH-YEAR']],
-                                                        "y": [df.sort_values('VALUE')['VALUE']],
-                                                    }
-                                                ],
-                                            ),
-                                            dict(
-                                                label="Descending",
-                                                method="update",
-                                                args=[
-                                                    {
-                                                        "x": [
-                                                            df.sort_values("VALUE", ascending=False)[
-                                                                "MONTH-YEAR"
-                                                            ]
-                                                        ],
-                                                        "y": [
-                                                            df.sort_values("VALUE", ascending=False)[
-                                                                "VALUE"
-                                                            ]
-                                                        ],
-                                                    }
-                                                ],
-                                            ),
-                                        ]
-                                    ),
-                                    direction="down",
-                                ),
-                            ]
-                        )
-
-                        st.plotly_chart(fig, use_container_width=True)
-                        if len(df['VARIABLE'].unique()) > 1:
-                            st.write('We recommend running the same prompt for one variable for optimal plots')
-            else:
-                df = pd.DataFrame(message["results"])
-                fig = go.Figure(data=[go.Bar(x=df.iloc[:, 0], y=df.iloc[:, 1])])
-
-                # Add sorting buttons
-                fig.update_layout(
-                    updatemenus=[
-                        dict(
-                            buttons=list(
-                                [
-                                    dict(
-                                        label="Ascending",
-                                        method="update",
-                                        args=[
-                                            {
-                                                "x": [df.sort_values(df.columns[1])[df.columns[0]]],
-                                                "y": [df.sort_values(df.columns[1])[df.columns[1]]],
-                                            }
-                                        ],
-                                    ),
-                                    dict(
-                                        label="Descending",
-                                        method="update",
-                                        args=[
-                                            {
-                                                "x": [
-                                                    df.sort_values(df.columns[1], ascending=False)[df.columns[0]]
-                                                ],
-                                                "y": [
-                                                    df.sort_values(df.columns[1], ascending=False)[df.columns[1]]
-                                                ],
-                                            }
-                                        ],
-                                    ),
-                                ]
-                            ),
-                            direction="down",
-                        ),
-                    ]
-                )
-
-                st.plotly_chart(fig, use_container_width=True)
+            plotly_dispatch(message["results"] , st)
         st.session_state.messages.append(message)
