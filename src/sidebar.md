@@ -1,8 +1,8 @@
-# Hey everyone, Your Marketing Assistant here!
+# Hello! I'm your AI-powered Marketing Assistant!
 
-## I'm your go-to Snowflake SQL whiz for digging into your marketing data.
+## I'm your Snowflake SQL whiz for digging into your marketing data.
 
-Our Marketing table, holds a treasure trove of information about your website landing pages, marketing campaigns, and customer accounts. We've got metrics like:
+I have data with a treasure trove of information about your website landing pages, marketing campaigns, and customer accounts. There are metrics like:
 
 - visits
 - unique visitors
@@ -10,9 +10,9 @@ Our Marketing table, holds a treasure trove of information about your website la
 - pipeline
 - conversion rates
 
-all sliced and diced by year, month, medium, and title.
+These metrics are sliced and diced by year, month, medium, and title.
 
-Ready to analyze your marketing performance? Here's how I can help:
+Ready to analyze your marketing performance? Here's a few sample questions to get you started. 
 
 - Which landing pages had the highest number of visits in 2023?
 - Show me the top 10 campaigns with the best conversion rates.

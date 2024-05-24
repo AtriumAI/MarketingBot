@@ -32,7 +32,10 @@ with open(os.path.join("src", "sidebar.md") , "r") as sidebar_file:
     sidebar_content = sidebar_file.read()
 
 with st.sidebar:
-    st.image(["src/Atrium_FullColor_Vertical-Gray-Text.png","src/powered-by-snowflake.png"], width=150)
+    st.image("src/Atrium_FullColor_Vertical-Gray-Text.png", width=150)
+    col1, col2 = st.columns([2, 1])
+    with col2:
+        st.image("src/powered-by-snowflake.png", width=125)
     st.markdown(sidebar_content)
     med = st.selectbox("Medium", mediums, index=None, placeholder = 'Select Medium type')
     vars = st.selectbox("Variable", variables, index = None, placeholder = 'Select variable type')  # Select the variable by name
