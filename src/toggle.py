@@ -243,6 +243,6 @@ if st.session_state.messages[-1]["role"] != "assistant":
                 error_message = (
                     "Sorry, that didn't seem to work. Please rephrase your query."
                 )
-                st.error(f"{error_message}")
+                st.write(f"{error_message}")
                 message["content"] += f"\n\n:warning: **Error:** {error_message}"
         st.session_state.messages.append(message)
