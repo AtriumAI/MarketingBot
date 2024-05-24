@@ -241,7 +241,7 @@ if st.session_state.messages[-1]["role"] != "assistant":
             except Exception as e:
                 ## st.error(f"An error occurred while executing the SQL query: {e}")
                 error_message = (
-                    "Sory, that didn't seem to work. Please rephrase your query."
+                    "Sorry, that didn't seem to work. Please rephrase your query."
                 )
                 st.error(f"{error_message}")
                 message["content"] += f"\n\n:warning: **Error:** {error_message}"
