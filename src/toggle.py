@@ -107,7 +107,7 @@ and wrap the generated sql code with ``` sql code markdown in this format for co
 ```sql
 select 
     TITLE,
-    SUM(VALUE) AS insert variable
+    SUM(VALUE) AS insert_variable
 from GFORSYTHE.MARKETINGBOT.MARKETING_METRICS_FINAL_MOCK_A
 WHERE MEDIUM ILIKE '%MEDIUM%'
 AND VARIABLE ILIKE '%VARIABLE%'
@@ -200,6 +200,7 @@ if "messages" not in st.session_state:
 if prompt := st.chat_input():
     st.session_state.messages.append({"role": "user", "content": prompt})
 
+# Display the rest of the messages based on the toggle
 for index, message in enumerate(st.session_state.messages):
     if message["role"] == "system":
         continue
