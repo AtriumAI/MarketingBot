@@ -107,6 +107,41 @@ ON ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISITOR_PAGE_VIEW.VISIT_ID = ATRIUM_RAW_PRD.ATRI
 LEFT JOIN ATRIUM_RAW_PRD.ATRIUM_PARDOT.PROSPECT
 ON ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISITOR_ACTIVITY.PROSPECT_ID = ATRIUM_RAW_PRD.ATRIUM_PARDOT.PROSPECT.ID;
 
+-- Opportunity Visitors Won and Loss
+create or replace view gforsythe.marketingbot.opportunity_visitors as
+select count(distinct(ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISIT.visitor_id)) as value,ATRIUM_SALESFORCE.OPPORTUNITY.NAME AS TITLE, MONTH(ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISITOR_PAGE_VIEW.CREATED_AT) AS MONTH, YEAR(ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISITOR_PAGE_VIEW.CREATED_AT) AS YEAR, 'VISITORS' AS VARIABLE, 'OPPORTUNITY' AS MEDIUM,ATRIUM_RAW_PRD.ATRIUM_SALESFORCE.OPPORTUNITY.IS_WON AS WON from ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISITOR_PAGE_VIEW
+join ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISIT
+on ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISITOR_PAGE_VIEW.visit_id =  ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISIT.id
+JOIN ATRIUM_RAW_PRD.ATRIUM_PARDOT.PROSPECT
+ON ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISIT.PROSPECT_ID = ATRIUM_RAW_PRD.ATRIUM_PARDOT.PROSPECT.ID
+JOIN ATRIUM_RAW_PRD.ATRIUM_SALESFORCE.OPPORTUNITY
+ON ATRIUM_RAW_PRD.ATRIUM_PARDOT.PROSPECT.CRM_CONTACT_FID = ATRIUM_RAW_PRD.ATRIUM_SALESFORCE.OPPORTUNITY.CONTACT_ID
+WHERE ATRIUM_RAW_PRD.ATRIUM_SALESFORCE.OPPORTUNITY.IS_CLOSED = TRUE
+GROUP BY ATRIUM_SALESFORCE.OPPORTUNITY.NAME, MONTH, YEAR, WON;
+
+-- Visitors within Sales Cycle for Opportunity
+CREATE OR REPLACE VIEW GFORSYTHE.MARKETINGBOT.SALESCYCLE_OPPORTUNITY AS
+select count(distinct(ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISIT.visitor_id)) as value,ATRIUM_SALESFORCE.OPPORTUNITY.NAME AS TITLE, 'SALES CYCLE' AS VARIABLE, 'OPPORTUNITY' AS MEDIUM from ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISITOR_PAGE_VIEW
+join ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISIT
+on ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISITOR_PAGE_VIEW.visit_id =  ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISIT.id
+JOIN ATRIUM_RAW_PRD.ATRIUM_PARDOT.PROSPECT
+ON ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISIT.PROSPECT_ID = ATRIUM_RAW_PRD.ATRIUM_PARDOT.PROSPECT.ID
+JOIN ATRIUM_RAW_PRD.ATRIUM_SALESFORCE.OPPORTUNITY
+ON ATRIUM_RAW_PRD.ATRIUM_PARDOT.PROSPECT.CRM_CONTACT_FID = ATRIUM_RAW_PRD.ATRIUM_SALESFORCE.OPPORTUNITY.CONTACT_ID
+WHERE ATRIUM_RAW_PRD.ATRIUM_SALESFORCE.OPPORTUNITY.IS_CLOSED = TRUE
+AND ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISITOR_PAGE_VIEW.CREATED_AT >= ATRIUM_RAW_PRD.ATRIUM_SALESFORCE.OPPORTUNITY.CREATED_DATE and ATRIUM_RAW_PRD.ATRIUM_PARDOT.VISITOR_PAGE_VIEW.CREATED_AT <= ATRIUM_RAW_PRD.ATRIUM_SALESFORCE.OPPORTUNITY.CLOSE_DATE
+GROUP BY ATRIUM_SALESFORCE.OPPORTUNITY.NAME;
+
+-- Web Page Bookings
+CREATE OR REPLACE TABLE GFORSYTHE.MARKETINGBOT.WEB_PAGE_BOOKINGS_SF AS
+select TITLE, SUM(ATRIUM_RAW_PRD.ATRIUM_SALESFORCE.OPPORTUNITY.AMOUNT) as VALUE, MONTH(ATRIUM_RAW_PRD.ATRIUM_SALESFORCE.OPPORTUNITY.CLOSE_DATE) AS MONTH, YEAR(ATRIUM_RAW_PRD.ATRIUM_SALESFORCE.OPPORTUNITY.CLOSE_DATE) AS YEAR, 'BOOKINGS' AS VARIABLE, 'WEB PAGE' AS MEDIUM from GFORSYTHE.MARKETINGBOT.prospect_test
+join ATRIUM_RAW_PRD.ATRIUM_PARDOT.PROSPECT
+on GFORSYTHE.MARKETINGBOT.prospect_test.unique_prospect = ATRIUM_RAW_PRD.ATRIUM_PARDOT.PROSPECT.ID
+join ATRIUM_RAW_PRD.ATRIUM_SALESFORCE.OPPORTUNITY
+on ATRIUM_RAW_PRD.ATRIUM_PARDOT.PROSPECT.crm_contact_fid = ATRIUM_RAW_PRD.ATRIUM_SALESFORCE.OPPORTUNITY.contact_ID
+WHERE ATRIUM_RAW_PRD.ATRIUM_SALESFORCE.OPPORTUNITY.IS_WON = TRUE
+group by title, MONTH, YEAR;
+
 CREATE OR REPLACE TABLE GFORSYTHE.MARKETINGBOT.WEBPAGE_CONVERSIONRATE AS
 SELECT count(distinct(CONVERTED)) / COUNT(DISTINCT(VISITOR_ID))  AS VALUE, TITLE AS TITLE, MONTH, YEAR, 'CONVERSION RATE' AS VARIABLE, 'WEB PAGE' AS MEDIUM FROM WEBPAGE_CONVERSION_INTERM
 GROUP BY TITLE, MONTH, YEAR;
@@ -204,33 +239,79 @@ SELECT
 CREATE OR REPLACE TABLE GFORSYTHE.MARKETINGBOT.MARKETING_METRICS_FINAL AS
 select ROUND(zeroifnull(value),2) AS VALUE, TITLE, MONTH, YEAR, VARIABLE, MEDIUM from marketing_metrics_final;
 
+-- Add WON column
+ALTER TABLE GFORSYTHE.marketingbot.MARKETING_METRICS_FINAL
+ADD COLUMN WON VARCHAR; 
+
+ALTER TABLE GFORSYTHE.MARKETINGBOT.MARKETING_METRICS_FINAL MODIFY VARIABLE VARCHAR(25);
+ALTER TABLE GFORSYTHE.MARKETINGBOT.MARKETING_METRICS_FINAL MODIFY MEDIUM VARCHAR(25);
+
+-- Insert Opportunity Visitors 
+INSERT INTO GFORSYTHE.marketingbot.MARKETING_METRICS_FINAL(TITLE,MONTH, YEAR, VALUE,VARIABLE,MEDIUM, WON)
+  SELECT
+    TITLE,MONTH, YEAR,VALUE,VARIABLE,MEDIUM,WON
+  FROM gforsythe.marketingbot.opportunity_visitors;
+
+-- Insert Sales Cycle Opportunity  
+INSERT INTO GFORSYTHE.marketingbot.MARKETING_METRICS_FINAL(TITLE, VALUE,VARIABLE,MEDIUM)
+  SELECT
+    TITLE,VALUE,VARIABLE,MEDIUM
+  FROM gforsythe.marketingbot.SALESCYCLE_OPPORTUNITY;
+
+-- Insert Web Page Bookings
+INSERT INTO GFORSYTHE.marketingbot.MARKETING_METRICS_FINAL(TITLE,MONTH, YEAR, VALUE,VARIABLE,MEDIUM)
+  SELECT
+    TITLE,MONTH, YEAR, VALUE,VARIABLE,MEDIUM
+  FROM gforsythe.marketingbot.WEB_PAGE_BOOKINGS_SF;
+
+UPDATE GFORSYTHE.marketingbot.MARKETING_METRICS_FINAL
+SET WON = UPPER(WON);
+
+SELECT * FROM GFORSYTHE.marketingbot.MARKETING_METRICS_FINAL WHERE WON IS NOT NULL;
 -- Attributes table inserts
+create or replace table GFORSYTHE.MARKETINGBOT.MARKETING_ATTRIBUTES (VARIABLE VARCHAR, DEFINITION VARCHAR);
+INSERT INTO GFORSYTHE.MARKETINGBOT.MARKETING_ATTRIBUTES
+    VALUES
+    ('VISITS', 'A visit (also called a session) begins when a user arrives on your web page from an external source and ends when they leave the web page. A single user can have multiple visits. Visits are different from unique visitors. Synonyms for visits are activity, accounts is most engaged, or traffic. Example prompt: Which of my accounts is most engaged? Must be filtered to VISITS for VARIABLE.');
+    
 INSERT INTO GFORSYTHE.MARKETINGBOT.MARKETING_ATTRIBUTES
     VALUES
     ('WON OPPORTUNITIES', 'A won opportunity is a sales prospect that has been successfully converted to a customer. The final stage is closed won and we have aquired a new project for the company. Instead of won opportunities users might use terms such as: closed deal, conversion, victory, or successful sale.');
 
 INSERT INTO GFORSYTHE.MARKETINGBOT.MARKETING_ATTRIBUTES
     VALUES
-    ('PIPELINE', 'Pipeline is the dollar amount estimated as revenue on the open opportunities that are still being work and still have the possibility to close. Pipeline may also be referred to as sales funnel, sales process, deal flow, and projected revenue.');
+    ('PIPELINE', 'Pipeline is the dollar amount estimated as revenue on the open opportunities that are still being work and still have the possibility to close. Pipeline may also be referred to as sales funnel, sales process, deal flow, or projected revenue.');
     
 INSERT INTO GFORSYTHE.MARKETINGBOT.MARKETING_ATTRIBUTES
     VALUES
-    ('CONVERSION RATE', 'Conversion rate is the rate of visits to contact or lead IDs for the specified medium. The conversion rate measures how successful your medium is at capturing interest. Some synonyms for conversion rate might be Lead generation rate, Contact generation rate, Capture rate, Opt-in rate, and Success rate:');
+    ('CONVERSION RATE', 'Conversion rate is the rate of visits to contact or lead IDs for the specified medium. The conversion rate measures how successful your medium is at capturing interest. Some synonyms for conversion rate might be Lead generation rate, Contact generation rate, Capture rate, Opt-in rate, or Success rate:');
 
 INSERT INTO GFORSYTHE.MARKETINGBOT.MARKETING_ATTRIBUTES
     VALUES
-    ('VISITORS', 'A visitor is a unique individual who accesses your website. Visitors are identified by their IP Addresses. One visitor can view a web page multiple times, but still count as one visitor.');
+    ('VISITORS', 'A visitor is a unique individual who accesses your website. Visitors are identified by their IP Addresses. One visitor can view a web page multiple times, but still count as one visitor. Users might use terms such as people, people are engaged, unique users, unique visitors, impressions, personas, unique personas or prospects. Example prompt: "How many people are engaged with the opportunities we win?" MUST be filtered to VISITORS for VARIABLE.');
+
+INSERT INTO GFORSYTHE.MARKETINGBOT.MARKETING_ATTRIBUTES
+    VALUES
+    ('SALES CYCLE', 'A sales cycle begins when an opportunity is created and goes until the opportunity is closed. Users will prompt about people influencing the sales cycle to indicate that VARIABLE should be filtered to SALES CYCLE. If you see sales cycle in the prompt it is an indication to filter VARIABLE to SALES CYCLE and DO NOT filter on WON! Synonyms for sales cycle are life cycle, influencers, customer journey');
+
+INSERT INTO GFORSYTHE.MARKETINGBOT.MARKETING_ATTRIBUTES
+    VALUES
+    ('BOOKINGS', 'Bookings refers to the closed won opportunities amount. These are typically recorded when a customer commits to a purchase and can be used to track revenue and forecast future sales. Users will prompt about highest number of bookings to indicate that VARIABLE should be filtered to BOOKINGS. If you see bookings in the prompt it is an indication to filter VARIABLE to BOOKINGS. Bookings is also only on MEDIUM filtered to WEB PAGE. Synonyms for bookings are closed deals, confirmed sales, revenue, won opportunities, won amount, total won amount, and total amount');
 
 -- Medium table inserts
-CREATE TABLE GFORSYTHE.MARKETINGBOT.MARKETING_MEDIUMS (MEDIUM VARCHAR, DESCRIPTION VARCHAR);
+CREATE OR REPLACE TABLE GFORSYTHE.MARKETINGBOT.MARKETING_MEDIUMS (MEDIUM VARCHAR, DESCRIPTION VARCHAR);
 INSERT INTO GFORSYTHE.MARKETINGBOT.MARKETING_MEDIUMS
     VALUES
-    ('ACCOUNT', 'an account is a fundamental object that represents an individual customer, partner, competitor, or any other organization that your business interacts with. Users might also use customer, client, partner, organization, or company instead of account, but it means the same thing.');
+    ('ACCOUNT', 'an account is a fundamental object that represents an individual customer, partner, competitor, or any other organization that your business interacts with. Users might also use customer, client, partner, organization, accounts or company instead of account, but it means the same thing. If you see any of the above terms you need to filter MEDIUM on ACCOUNT');
 
 INSERT INTO GFORSYTHE.MARKETINGBOT.MARKETING_MEDIUMS
     VALUES
-    ('CAMPAIGN', 'A campaign is a structured marketing initiative designed to achieve specific goals, such as lead generation, product promotion, or brand awareness. Users might also use marketing initiative, marketing program, promotion, outreach, or drive instead of campaign, but it means the same thing.');
+    ('CAMPAIGN', 'A campaign is a structured marketing initiative designed to achieve specific goals, such as lead generation, product promotion, or brand awareness. Users might also use marketing initiative, marketing program, promotion, outreach, campaigns or drive instead of campaign, but it means the same thing. If you see any of the above terms you need to filter MEDIUM on CAMPAIGN');
 
 INSERT INTO GFORSYTHE.MARKETINGBOT.MARKETING_MEDIUMS
     VALUES
-    ('WEB PAGE', 'A web page is a single, uniquely addressable unit of content on our company website. It is a digital asset crafted to deliver information, promote products or services,  or facilitate interaction with visitors. Users might use page, site page, website, or landing page instead of web page, but it means the same thing.');
+    ('WEB PAGE', 'A web page is a single, uniquely addressable unit of content on our company website. It is a digital asset crafted to deliver information, promote products or services,  or facilitate interaction with visitors. Users might use page, site page, website, web pages or landing page instead of web page, but it means the same thing. If you see any of the above terms you need to filter MEDIUM on WEB PAGE');
+
+INSERT INTO GFORSYTHE.MARKETINGBOT.MARKETING_MEDIUMS (MEDIUM, DESCRIPTION)
+    VALUES
+    ('OPPORTUNITY', 'An opportunity or opportunities represents a potential sales deal with a prospective customer. Users might use opportunities, deal or deals instead of opportunity, but it means the same thing. Example prompt: "How many people are engaged with the opportunities we win?". If you see any of the above terms you MUST filter MEDIUM on OPPORTUNITY');
