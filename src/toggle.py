@@ -106,14 +106,14 @@ Don't forget to use "ilike %keyword%" for fuzzy match queries (especially for VA
 and wrap the generated sql code with ``` sql code markdown in this format for comparing two variables e.g:
 ```sql
 select 
-    sum(case when variable = 'user input' then value end) as variable_1_sum,
-    sum(case when variable = 'user input' then value end) as variable_2_sum,
-    MONTH,
-    YEAR
+    TITLE,
+    SUM(VALUE) AS insert variable
 from GFORSYTHE.MARKETINGBOT.MARKETING_METRICS_FINAL_MOCK_A
-group by MONTH, YEAR
-WHERE MEDIUM = 'insert medium'
-AND VARIABLE = 'insert variable'
+WHERE MEDIUM ILIKE '%MEDIUM%'
+AND VARIABLE ILIKE '%VARIABLE%'
+group by TITLE
+ORDER BY INSERT VARIABLE DESC
+LIMIT 10
 ```
 
 For each question from the user, make sure to include a query in your response.
@@ -200,12 +200,12 @@ if "messages" not in st.session_state:
 if prompt := st.chat_input():
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-for message in st.session_state.messages:
+for index, message in enumerate(st.session_state.messages):
     if message["role"] == "system":
         continue
     if message["role"] == "assistant":
         with st.chat_message(message["role"], avatar="src/bot-static.png"):
-            if on:
+            if index == 0 or on:
                 st.write(message["content"])
             if "results" in message:
                 st.dataframe(message["results"])
@@ -225,7 +225,7 @@ if st.session_state.messages[-1]["role"] != "assistant":
             stream=True,
         ):
             response += delta.text or ""
-            if on:
+            if index == 0 or on:
                 resp_container.markdown(response)
 
         message = {"role": "assistant", "content": response}
