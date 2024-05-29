@@ -2,49 +2,11 @@ import pandas as pd
 import plotly.graph_objects as go
 
 def plotly_single_column_numeric(results, st):
-    df = pd.DataFrame(results)
-    fig = go.Figure(data=[go.Bar(x=df.iloc[:, 0], y=df.iloc[:, 0])])
-    fig.update_layout(
-        updatemenus=[
-            dict(
-                buttons=list(
-                    [
-                        dict(
-                            label="Ascending",
-                            method="update",
-                            args=[
-                                {
-                                    "x": [df.sort_values(df.columns[0])[df.columns[0]]],
-                                    "y": [df.sort_values(df.columns[0])[df.columns[0]]],
-                                }
-                            ],
-                        ),
-                        dict(
-                            label="Descending",
-                            method="update",
-                            args=[
-                                {
-                                    "x": [
-                                        df.sort_values(df.columns[0], ascending=False)[
-                                            df.columns[0]
-                                        ]
-                                    ],
-                                    "y": [
-                                        df.sort_values(df.columns[0], ascending=False)[
-                                            df.columns[0]
-                                        ]
-                                    ],
-                                }
-                            ],
-                        ),
-                    ]
-                ),
-                direction="down",
-            ),
-        ]
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
+    # When the result set is a single number, we don't need to graph it
+    if len(df) > 1:
+        df = pd.DataFrame(results)
+        fig = go.Figure(data=[go.Bar(x=df.columns, y=df.iloc[:, 0])])
+        st.plotly_chart(fig, use_container_width=True)
 
 def plotly_column2_non_number(results, st):
     df = pd.DataFrame(results)

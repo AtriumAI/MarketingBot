@@ -14,8 +14,8 @@ These metrics are sliced and diced by year, month, medium, and title.
 
 Ready to analyze your marketing performance? Here's a few sample questions to get you started. 
 
-- Which landing pages had the highest number of visits in 2023?
+- Which landing pages had the most visits in 2023?
 - Show me the top 10 campaigns with the best conversion rates.
-- What was our total pipeline for accounts by all the months in 2023?
+- What was our total pipeline for accounts by month in 2023?
 
 Let's get those insights flowing!

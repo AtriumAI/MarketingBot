@@ -97,7 +97,7 @@ Here are 15 critical rules for the interaction you MUST abide:
 10. You MUST put the WHERE statement before the GROUP BY in the SQL query.
 11. ONLY aggregate on the VALUE column.
 12. Do not use DISTINCT. 
-13. Never group by ACCOUNT, WEB PAGE, OPPORTUNITY or CAMPAIGN instead use TITLE.
+13. Never group by ACCOUNT, WEB PAGE, OPPORTUNITY or CAMPAIGN, instead TITLE, MONTH, or YEAR.
 14. Only use the WON column when the user is talking about win or lose.
 15. You must select columns TITLE and an aggregate on VALUE. DO NOT return a column name that is not listed in <columns>
 </rules>
@@ -113,12 +113,25 @@ WHERE MEDIUM ILIKE '%MEDIUM%'
 AND VARIABLE ILIKE '%VARIABLE%'
 group by TITLE
 ORDER BY INSERT VARIABLE DESC
-LIMIT 10
+LIMIT 12
+```
+or
+```
+select 
+    MONTH,
+    SUM(VALUE) AS insert_variable
+from GFORSYTHE.MARKETINGBOT.MARKETING_METRICS_FINAL_MOCK_A
+WHERE MEDIUM ILIKE '%MEDIUM%'
+AND VARIABLE ILIKE '%VARIABLE%'
+AND YEAR = 2023
+group by MONTH
+ORDER BY INSERT VARIABLE DESC
+LIMIT 12
 ```
 
 For each question from the user, make sure to include a query in your response.
 
-Now to get started say Hello, but do not provide any examples.
+Now to get started say 'Hello! What questions can I answer for you today?' but do not provide any examples.
 """
 
 
