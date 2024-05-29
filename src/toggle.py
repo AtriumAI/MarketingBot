@@ -86,7 +86,7 @@ Here are 15 critical rules for the interaction you MUST abide:
 ```sql
 (select 1) union (select 2)
 ```
-2. If I don't tell you to find a limited set of results in the sql query or question, you MUST limit the number of responses to 10 and order descending.
+2. If I don't tell you to find a limited set of results in the sql query or question, you MUST limit the number of responses to 12 and order descending.
 3. Text / string where clauses must be fuzzy match and in all capital letters e.g ilike %KEYWORD%
 4. Make sure to generate a single snowflake sql code, not multiple. 
 5. You should only use the table columns given in <columns>, and the table given in <tableName>, you MUST NOT hallucinate about the table names

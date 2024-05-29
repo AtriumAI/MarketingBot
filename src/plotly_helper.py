@@ -1,7 +1,7 @@
 from re import error
 import pandas as pd
 from pandas.api.types import is_any_real_numeric_dtype, is_string_dtype
-from plotly_graphs import plotly_single_column_numeric, plotly_column2_non_number, plotly_label_number
+from plotly_graphs import plotly_single_column_numeric, plotly_column2_non_number, plotly_label_number, plotly_trend
 
 # This will catch numbers that are being represented as objects
 def series_is_numbers(series):
@@ -20,6 +20,9 @@ def plotly_dispatch(results, st):
             plotly_single_column_numeric(results, st)
         else:
             st.write("Cannot create a bar chart with a single non-numeric column.")
+    # Month or Year is in the column list
+    elif 'MONTH' in results.columns or 'YEAR' in results.columns:
+        plotly_trend(results, st)
     # Second column is not number type
     elif not series_is_numbers(results.iloc[:, 1]):
         print(results.dtypes)
