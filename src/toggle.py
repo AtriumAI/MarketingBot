@@ -13,7 +13,7 @@ import google.generativeai as genai
 # from google.generativeai import GenerativeModel, ChatSession
 # from prompts import get_system_prompt
 
-st.title("Marketing Assistant")
+st.title("AI Marketing Assistant")
 SCHEMA_PATH = st.secrets.get("SCHEMA_PATH", "GFORSYTHE.MARKETINGBOT")
 MARKETING_METRICS_TABLE = st.secrets.get(
     "MARKETING_METRICS_TABLE", "MARKETING_METRICS_FINAL"
