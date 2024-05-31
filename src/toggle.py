@@ -38,8 +38,8 @@ with open(os.path.join("src", "sidebar.md"), "r") as sidebar_file:
 with st.sidebar:
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
-        st.image("src/Atrium_FullColorArches_Vertical_White Text.png", width=150)
-        st.image("src/powered-by-snowflake.png", width=125)
+        st.image("src/Atrium_FullColorArches_Vertical_White Text.png", width=180)
+        st.image("src/powered-by-snowflake.png", width=150)
     st.markdown(sidebar_content)
     med = st.selectbox("Medium", mediums, index=None, placeholder="Select Medium type")
     vars = st.selectbox(
@@ -235,7 +235,7 @@ for index, message in enumerate(st.session_state.messages):
                 plotly_dispatch(message["results"], st)
     if message["role"] != "assistant":
         with st.chat_message(
-            message["role"], avatar="src/Atrium_FullColor_Vertical-Gray-Text.png"
+            message["role"], avatar="src/Atrium_FullColorArches_Vertical_White Text.png"
         ):
             st.write(message["content"])
 # If last message is not from assistant, we need to generate a new response
