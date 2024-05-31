@@ -235,7 +235,7 @@ for index, message in enumerate(st.session_state.messages):
                 plotly_dispatch(message["results"], st)
     if message["role"] != "assistant":
         with st.chat_message(
-            message["role"], avatar="src/Atrium_FullColorArches_Vertical_White Text.png"
+            message["role"], avatar="src/Atrium_FullColorArches_Vertical_No Text.png"
         ):
             st.write(message["content"])
 # If last message is not from assistant, we need to generate a new response
