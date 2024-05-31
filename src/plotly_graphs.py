@@ -2,11 +2,19 @@ import pandas as pd
 import plotly.graph_objects as go
 
 def plotly_single_column_numeric(results, st):
+    df = pd.DataFrame(results)
     # When the result set is a single number, we don't need to graph it
     if len(df) > 1:
-        df = pd.DataFrame(results)
-        fig = go.Figure(data=[go.Bar(x=df.columns, y=df.iloc[:, 0])])
+        fig = go.Figure(data=[go.Bar(x=df.index, y=df.iloc[:, 0])])
         st.plotly_chart(fig, use_container_width=True)
+        fig.update_layout(
+            xaxis_title = df.columns[0],
+            title = {
+                'text': df.columns[0],
+                'x': 0.5,
+                'xanchor': 'center'
+            }
+        )
 
 def plotly_column2_non_number(results, st):
     df = pd.DataFrame(results)

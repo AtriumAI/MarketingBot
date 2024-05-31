@@ -80,7 +80,7 @@ The table is set up so you should only need to filter and aggregate based on the
 
 {context}
 
-Here are 15 critical rules for the interaction you MUST abide:
+Here are 17 critical rules for the interaction you MUST abide:
 <rules>
 1. You MUST MUST wrap the generated sql code within ``` sql code markdown in this format e.g
 ```sql
@@ -92,20 +92,22 @@ Here are 15 critical rules for the interaction you MUST abide:
 5. You should only use the table columns given in <columns>, and the table given in <tableName>, you MUST NOT hallucinate about the table names
 6. DO NOT put numerical at the very front of sql variable.
 7. When the user includes total you need to sum the VALUE for ALL months and years except if the VARIABLE is CONVERSION RATE then use average.
-8. You MUST filter on MEDIUM and VARIABLE EVERYTIME based on the user input.
-9. Only use case statements when users want to compare two variables.
-10. You MUST put the WHERE statement before the GROUP BY in the SQL query.
-11. ONLY aggregate on the VALUE column.
-12. Do not use DISTINCT. 
-13. Never group by ACCOUNT, WEB PAGE, OPPORTUNITY or CAMPAIGN, instead TITLE, MONTH, or YEAR.
-14. Only use the WON column when the user is talking about win or lose.
-15. You must select columns TITLE and an aggregate on VALUE. DO NOT return a column name that is not listed in <columns>
+8. When the user includes average you should average the value. Do not include a group by clause unless specifically asked to do so.
+9. You MUST filter on MEDIUM and VARIABLE EVERYTIME based on the user input.
+10. Only use case statements when users want to compare two variables.
+11. You MUST put the WHERE statement before the GROUP BY in the SQL query.
+12. ONLY aggregate on the VALUE column.
+13. Do not use DISTINCT. 
+14. Never group by ACCOUNT, WEB PAGE, OPPORTUNITY or CAMPAIGN, instead TITLE, MONTH, or YEAR.
+15. Only use the WON column when the user is talking about win or lose.
+16. You must select columns TITLE and an aggregate on VALUE. DO NOT return a column name that is not listed in <columns>
+17. When you group by month, also order by month asc
 </rules>
 
 Don't forget to use "ilike %keyword%" for fuzzy match queries (especially for VARIABLE, MEDIUM, and WON columns)
 and wrap the generated sql code with ``` sql code markdown in this format for comparing two variables e.g:
 ```sql
-select 
+SELECT 
     TITLE,
     SUM(VALUE) AS insert_variable
 from GFORSYTHE.MARKETINGBOT.MARKETING_METRICS_FINAL_MOCK_A
@@ -116,8 +118,8 @@ ORDER BY INSERT VARIABLE DESC
 LIMIT 12
 ```
 or
-```
-select 
+```sql
+SELECT
     MONTH,
     SUM(VALUE) AS insert_variable
 from GFORSYTHE.MARKETINGBOT.MARKETING_METRICS_FINAL_MOCK_A
@@ -125,10 +127,17 @@ WHERE MEDIUM ILIKE '%MEDIUM%'
 AND VARIABLE ILIKE '%VARIABLE%'
 AND YEAR = 2023
 group by MONTH
-ORDER BY INSERT VARIABLE DESC
+ORDER BY MONTH
 LIMIT 12
 ```
-
+or
+```sql
+SELECT
+    AVG(VALUE) AS insert_variable
+from GFORSYTHE.MARKETINGBOT.MARKETING_METRICS_FINAL_MOCK_A
+WHERE MEDIUM ILIKE '%MEDIUM%'
+AND VARIABLE ILIKE '%VARIABLE%'
+```
 For each question from the user, make sure to include a query in your response.
 
 Now to get started say 'Hello! What questions can I answer for you today?' but do not provide any examples.
@@ -222,7 +231,7 @@ for index, message in enumerate(st.session_state.messages):
             if index == 0 or on:
                 st.write(message["content"])
             if "results" in message:
-                st.dataframe(message["results"])
+                st.dataframe(message["results"], use_container_width=True)
                 plotly_dispatch(message["results"], st)
     if message["role"] != "assistant":
         with st.chat_message(
@@ -250,12 +259,12 @@ if st.session_state.messages[-1]["role"] != "assistant":
                 sql = sql_match.group(1)
                 conn = st.connection("snowflake")
                 message["results"] = conn.query(sql)
-                st.dataframe(message["results"])
+                st.dataframe(message["results"], use_container_width=True)
                 plotly_dispatch(message["results"], st)
             except Exception as e:
                 ## st.error(f"An error occurred while executing the SQL query: {e}")
                 error_message = (
-                    "Sorry, that didn't seem to work. Please rephrase your query."
+                    "Sorry, that didn't seem to work. Please rephrase your question."
                 )
                 st.write(f"{error_message}")
                 message["content"] += f"\n\n:warning: **Error:** {error_message}"

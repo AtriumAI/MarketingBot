@@ -1,8 +1,6 @@
 # Hello! I'm your AI-powered Marketing Assistant!
 
-## I'm your Snowflake SQL whiz for digging into your marketing data.
-
-I have data with a treasure trove of information about your website landing pages, marketing campaigns, and customer accounts. There are metrics like:
+I have Snowflake data with a treasure trove of information about your website landing pages, marketing campaigns, and customer accounts. There are metrics like:
 
 - visits
 - unique visitors
